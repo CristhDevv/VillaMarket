@@ -1,27 +1,21 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  const session = await auth();
-  const { pathname } = request.nextUrl;
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('authjs.session-token') 
+    ?? request.cookies.get('__Secure-authjs.session-token')
 
-  const isProtectedRoute = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
-  const isAdminRoute = pathname.startsWith("/admin");
+  const { pathname } = request.nextUrl
 
-  if (isProtectedRoute && !session) {
-    const url = new URL("/login", request.url);
-    url.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(url);
+  if (!token) {
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
-  if (isAdminRoute && session?.user?.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return NextResponse.next();
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
-};
+  matcher: ['/dashboard/:path*', '/admin/:path*']
+}
