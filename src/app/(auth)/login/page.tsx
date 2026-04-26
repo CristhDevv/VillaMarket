@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 // import { GoogleLogo } from "@phosphor-icons/react";
@@ -28,7 +28,15 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Credenciales inválidas. Intenta nuevamente.");
       } else {
-        router.push("/dashboard");
+        // Obtener la sesión actualizada para determinar el rol
+        const session = await getSession();
+        const role = session?.user?.role;
+
+        let destination = "/";
+        if (role === "ADMIN") destination = "/admin";
+        else if (role === "OWNER") destination = "/dashboard";
+        
+        router.push(destination);
         router.refresh();
       }
     } catch (err) {
