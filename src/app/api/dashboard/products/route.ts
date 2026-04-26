@@ -32,13 +32,20 @@ export async function POST(req: Request) {
     const business = await getBusinessForUser(session.user.id);
     if (!business) return apiError("No tienes un negocio registrado", 404);
 
-    const { name, description, price, image, available, categoryId } = await req.json();
+    const { name, description, price, image, available, categoryId, stock } = await req.json();
     if (!name || price === undefined) return apiError("Nombre y precio son obligatorios", 400);
+
+    let finalAvailable = available ?? true;
+    if (stock !== undefined && stock !== null) {
+      if (stock === 0) finalAvailable = false;
+      else if (stock > 0) finalAvailable = true;
+    }
 
     const product = await prisma.product.create({
       data: {
         name, description, price, image,
-        available: available ?? true,
+        stock: stock !== undefined ? stock : null,
+        available: finalAvailable,
         businessId: business.id,
         categoryId: categoryId || null,
       },

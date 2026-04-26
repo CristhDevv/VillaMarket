@@ -1,6 +1,7 @@
 import { SearchBar } from "@/components/shared/SearchBar";
 import { CategoryCard } from "@/components/business/CategoryCard";
 import { BusinessCard } from "@/components/business/BusinessCard";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { prisma } from "@/lib/prisma";
 import {
   ForkKnife,
@@ -68,6 +69,33 @@ export default async function HomePage() {
 
   return (
     <div className="px-4 pt-4 space-y-6">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "VillaMarket",
+        url: "https://villamarket.co",
+        description: "Directorio de negocios de Villa Rica, Cauca, Colombia",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: "https://villamarket.co/negocios?search={search_term_string}",
+          "query-input": "required name=search_term_string",
+        },
+      }} />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "VillaMarket",
+        url: "https://villamarket.co",
+        description: "Plataforma de comercio local de Villa Rica, Cauca",
+        areaServed: {
+          "@type": "City",
+          name: "Villa Rica",
+          containedInPlace: {
+            "@type": "AdministrativeArea",
+            name: "Cauca",
+          },
+        },
+      }} />
 
       {/* Hero */}
       <div>
@@ -125,6 +153,7 @@ export default async function HomePage() {
                   avgRating={avg}
                   reviewCount={ratings.length}
                   address={biz.address}
+                  isVerified={biz.isVerified}
                 />
               );
             })}

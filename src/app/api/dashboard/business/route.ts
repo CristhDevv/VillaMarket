@@ -50,6 +50,7 @@ export async function POST(req: Request) {
         whatsapp, instagram, facebook, website,
         ownerId: session.user.id,
         status: "PENDING",
+        coverImage: body.coverImage ?? null,
       },
     });
 
@@ -69,7 +70,7 @@ export async function PATCH(req: Request) {
     if (!business) return apiError("No tienes un negocio registrado", 404);
 
     const body = await req.json();
-    const { coverImage: _coverImage, ...validFields } = body; // coverImage is handled via BusinessImage, not Business
+    const validFields = { ...body, coverImage: body.coverImage ?? null };
     const updated = await prisma.business.update({
       where: { id: business.id },
       data: validFields,

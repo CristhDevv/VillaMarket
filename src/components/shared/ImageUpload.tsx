@@ -6,7 +6,7 @@ import { UploadSimple, X, Image as ImageIcon, SpinnerGap } from "@phosphor-icons
 
 interface ImageUploadProps {
   value: string;
-  onChange: (url: string) => void;
+  onChange: (url: string, publicId?: string) => void;
   folder: "businesses" | "products";
   aspectRatio?: "square" | "cover";
 }
@@ -39,7 +39,7 @@ export function ImageUpload({ value, onChange, folder, aspectRatio = "square" }:
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al subir");
-      onChange(data.data.url);
+      onChange(data.data.url, data.data.publicId);
     } catch (err: any) {
       setError(err.message);
     } finally {

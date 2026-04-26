@@ -2,6 +2,7 @@ import { getBusinesses } from "@/lib/businesses";
 import { prisma } from "@/lib/prisma";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { CategoryFilter } from "@/components/shared/CategoryFilter";
+import { AdvancedFilters } from "@/components/business/AdvancedFilters";
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { Storefront, X } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
@@ -9,11 +10,14 @@ import Link from "next/link";
 export default async function NegociosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; category?: string; page?: string }>;
+  searchParams: Promise<{ search?: string; category?: string; page?: string; verified?: string; open?: string; priceRange?: string }>;
 }) {
   const params = await searchParams;
   const search = params.search || "";
   const category = params.category || "";
+  const verified = params.verified === "true";
+  const open = params.open === "true";
+  const priceRange = params.priceRange || undefined;
   const page = parseInt(params.page || "1");
 
   const [categories, { businesses, total, totalPages }] = await Promise.all([
@@ -22,7 +26,7 @@ export default async function NegociosPage({
       orderBy: { order: "asc" },
       select: { name: true, slug: true },
     }),
-    getBusinesses({ search, category, page, limit: 10 }),
+    getBusinesses({ search, category, verified, open, priceRange, page, limit: 10 }),
   ]);
 
   return (
@@ -31,6 +35,8 @@ export default async function NegociosPage({
       <div className="px-4">
         <SearchBar placeholder="Busca por nombre, descripción..." />
       </div>
+
+      <AdvancedFilters />
 
       {/* Chip de búsqueda activa */}
       {search && (
@@ -73,6 +79,7 @@ export default async function NegociosPage({
                     avgRating={avg}
                     reviewCount={ratings.length}
                     address={biz.address}
+                    isVerified={biz.isVerified}
                   />
                 );
               })}

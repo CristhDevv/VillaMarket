@@ -9,6 +9,20 @@ import {
   Star, MapPin, InstagramLogo, FacebookLogo, Globe, 
   CheckCircle, Package 
 } from "@phosphor-icons/react/dist/ssr";
+import { auth } from "@/lib/auth";
+import { ReviewForm } from "@/components/business/ReviewForm";
+import { ReviewList } from "@/components/business/ReviewList";
+import { JsonLd } from "@/components/shared/JsonLd";
+
+interface ProductWithStock {
+  id: string;
+  name: string;
+  price: { toNumber: () => number } | number;
+  image: string | null;
+  available: boolean;
+  stock: number | null;
+  category: { id: string; name: string } | null;
+}
 
 async function getBusiness(slug: string) {
   return prisma.business.findUnique({
@@ -37,7 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   
   const title = `${business.name} — VillaMarket`;
   const description = business.description || `Encuentra ${business.name} en Villa Rica, Cauca`;
-  const image = business.images.find(img => img.isCover)?.url ?? business.images[0]?.url;
+  const image = business.coverImage || business.images?.[0]?.url;
 
   return {
     title,
@@ -62,22 +76,79 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const business = await getBusiness(slug);
   if (!business) notFound();
 
+  const session = await auth();
+  let existingReview = null;
+  if (session?.user?.id) {
+    existingReview = await prisma.review.findUnique({
+      where: { businessId_userId: { businessId: business.id, userId: session.user.id } },
+    });
+  }
+
   const ratings = business.reviews.map((r) => r.rating);
   const avgRating = ratings.length > 0 
     ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) 
     : null;
 
-  const allProducts = business.products;
+  const allProducts = business.products as unknown as ProductWithStock[];
   const productCategories = business.productCategories;
+
+  // — JSON-LD helpers —
+  // openingHours in Schema.org format: "Mo 08:00-18:00"
+  const dayAbbr: Record<string, string> = {
+    lunes: "Mo", martes: "Tu", miercoles: "We", jueves: "Th",
+    viernes: "Fr", sabado: "Sa", domingo: "Su",
+  };
+  const openingHours: string[] = [];
+  if (business.schedule) {
+    const sched = business.schedule as Record<string, { open: string; close: string }>;
+    for (const [day, hours] of Object.entries(sched)) {
+      const abbr = dayAbbr[day.toLowerCase()];
+      if (abbr) openingHours.push(`${abbr} ${hours.open}-${hours.close}`);
+    }
+  }
+
+  const productPrices = business.products.map(p => Number(p.price));
+  const avgPrice = productPrices.length
+    ? productPrices.reduce((a, b) => a + b, 0) / productPrices.length
+    : null;
+  const priceRange = avgPrice === null ? undefined
+    : avgPrice < 20000 ? "$"
+    : avgPrice <= 80000 ? "$$"
+    : "$$$";
+
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: business.name,
+    description: business.description || undefined,
+    image: business.coverImage || undefined,
+    telephone: business.phone || undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: business.address || undefined,
+      addressLocality: "Villa Rica",
+      addressRegion: "Cauca",
+      addressCountry: "CO",
+    },
+    url: `https://villamarket.co/negocios/${business.slug}`,
+    ...(openingHours.length && { openingHours }),
+    ...(priceRange && { priceRange }),
+    ...(avgRating && { aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: avgRating,
+      reviewCount: ratings.length,
+    }}),
+  };
 
   return (
     <div className="pb-8">
+      <JsonLd data={localBusinessSchema} />
       {/* 1. Galería / Banner */}
       <div className="w-full h-64 bg-surface relative overflow-hidden flex items-center justify-center">
         {(() => {
-          const cover = business.images.find(img => img.isCover) ?? business.images[0];
+          const cover = business.coverImage || business.images?.[0]?.url;
           return cover ? (
-            <Image src={cover.url} alt={business.name} fill className="object-cover" priority />
+            <Image src={cover} alt={business.name} fill className="object-cover" priority />
           ) : (
             <span className="text-6xl">{business.category.emoji}</span>
           );
@@ -109,7 +180,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
               </div>
             ) : <span className="text-xs text-muted">Sin reseñas aún</span>}
             {business.isVerified && (
-              <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded-pill">
+              <div className="flex items-center gap-1 text-accent bg-accent/10 px-2 py-0.5 rounded-pill">
                 <CheckCircle size={12} weight="fill" />
                 <span className="text-[10px] font-bold">Verificado</span>
               </div>
@@ -122,7 +193,21 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
           <ActionButtons name={business.name} phone={business.phone} whatsapp={business.whatsapp} />
         )}
 
-        {/* 4. Sobre el negocio */}
+        {/* 4. Galería pública */}
+        {business.images && business.images.length > 0 && (
+          <section className="space-y-3 -mx-4 px-4 overflow-hidden md:mx-0 md:px-0">
+            <h2 className="text-lg font-bold text-foreground">Galería</h2>
+            <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2 md:grid md:grid-cols-3 md:overflow-visible">
+              {business.images.map((img) => (
+                <div key={img.id} className="relative w-40 h-40 md:w-full md:h-48 flex-shrink-0 rounded-card overflow-hidden bg-surface border border-border">
+                  <Image src={img.url} alt="Foto del negocio" fill className="object-cover" sizes="(max-width: 768px) 160px, 33vw" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 5. Sobre el negocio */}
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">Sobre el negocio</h2>
           {business.description && <p className="text-sm text-muted leading-relaxed">{business.description}</p>}
@@ -164,13 +249,26 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
 
             <div className="grid grid-cols-2 gap-3">
               {allProducts.map(product => (
-                <div key={product.id} className="bg-white border border-border rounded-card overflow-hidden shadow-sm">
+                <div key={product.id} className={`bg-white border border-border rounded-card overflow-hidden shadow-sm ${product.stock === 0 ? 'opacity-75' : ''}`}>
                   {/* Imagen */}
                   <div className="relative w-full h-28 bg-surface flex items-center justify-center overflow-hidden">
                     {product.image ? (
                       <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 33vw" />
                     ) : (
                       <Package size={32} className="text-muted" weight="light" />
+                    )}
+                    {/* Stock badge overlay */}
+                    {product.stock === 0 && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-pill">Agotado</span>
+                      </div>
+                    )}
+                    {product.stock !== null && product.stock > 0 && product.stock <= 5 && (
+                      <div className="absolute bottom-1.5 left-1.5">
+                        <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-pill shadow">
+                          Solo quedan {product.stock}
+                        </span>
+                      </div>
                     )}
                   </div>
                   <div className="p-3">
@@ -185,7 +283,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                       businessId={business.id}
                       businessName={business.name}
                       businessSlug={business.slug}
-                      available={product.available}
+                      available={product.available && product.stock !== 0}
                     />
                   </div>
                 </div>
@@ -239,38 +337,19 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
         )}
 
         {/* 8. Reseñas */}
-        <section className="space-y-3">
+        <section className="space-y-4">
           <h2 className="text-lg font-bold text-foreground">Reseñas</h2>
-          {business.reviews.length > 0 ? (
-            <div className="space-y-3">
-              {business.reviews.map(review => (
-                <div key={review.id} className="bg-surface border border-border rounded-card p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-border flex items-center justify-center font-bold text-xs text-muted overflow-hidden">
-                      {review.user.image
-                        ? <Image src={review.user.image} alt={review.user.name || "User"} width={32} height={32} />
-                        : (review.user.name || "U")[0].toUpperCase()
-                      }
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-foreground">{review.user.name || "Usuario anónimo"}</p>
-                      <div className="flex text-yellow-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} size={10} weight={i < review.rating ? "fill" : "regular"} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {review.comment && <p className="text-xs text-muted leading-relaxed">{review.comment}</p>}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-surface border border-border rounded-card p-6 text-center">
-              <Star size={32} className="mx-auto text-muted mb-2" weight="light" />
-              <p className="text-sm font-medium text-foreground">Aún no hay reseñas</p>
-            </div>
-          )}
+          
+          <ReviewForm 
+            businessSlug={business.slug} 
+            existingReview={existingReview ? {
+              id: existingReview.id,
+              rating: existingReview.rating,
+              comment: existingReview.comment
+            } : null}
+          />
+
+          <ReviewList businessSlug={business.slug} />
         </section>
       </div>
     </div>

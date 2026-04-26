@@ -27,7 +27,10 @@ export async function POST(req: Request) {
     const { url, publicId } = await uploadImage(base64, folder);
     return apiSuccess({ url, publicId });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("Upload error exact:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+    }
     return apiError("Error al subir la imagen", 500);
   }
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { House, MagnifyingGlass, MapPin, Package } from "@phosphor-icons/react";
+import { House, MagnifyingGlass, MapPin, Package, User } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -15,6 +15,7 @@ export function BottomNav() {
     { href: "/negocios",  icon: MagnifyingGlass, label: "Buscar"   },
     { href: "/mapa",      icon: MapPin,          label: "Mapa"     },
     ...(session ? [{ href: "/mis-pedidos", icon: Package, label: "Pedidos" }] : []),
+    { href: session ? "/perfil" : "/login", icon: User, label: session ? "Perfil" : "Ingresar" },
   ];
 
   return (

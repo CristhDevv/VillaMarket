@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Star, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
+import { Star, WhatsappLogo, CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils";
 
 interface BusinessCardProps {
@@ -13,6 +13,7 @@ interface BusinessCardProps {
   reviewCount?: number;
   whatsapp?: string | null;
   address?: string | null;
+  isVerified?: boolean;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ export function BusinessCard({
   reviewCount,
   whatsapp,
   address,
+  isVerified,
   className,
 }: BusinessCardProps) {
   return (
@@ -60,9 +62,17 @@ export function BusinessCard({
           </span>
 
           {/* Nombre */}
-          <h3 className="font-semibold text-sm text-foreground line-clamp-1 mb-1">
-            {name}
-          </h3>
+          <div className="flex items-center gap-1.5 mb-1">
+            <h3 className="font-semibold text-sm text-foreground line-clamp-1">
+              {name}
+            </h3>
+            {isVerified && (
+              <div className="flex-shrink-0 flex items-center gap-0.5 text-accent bg-accent/10 px-1.5 py-0.5 rounded-pill" title="Negocio Verificado">
+                <CheckCircle size={10} weight="fill" />
+                <span className="text-[9px] font-bold">Verificado</span>
+              </div>
+            )}
+          </div>
 
           {/* Dirección */}
           {address && (

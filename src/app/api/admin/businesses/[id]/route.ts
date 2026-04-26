@@ -7,14 +7,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (session?.user?.role !== "ADMIN") return apiError("No autorizado", 403);
 
   const { id } = await params;
-  const { isActive } = await req.json();
+  const { isActive, isVerified } = await req.json();
 
-  if (typeof isActive !== "boolean") return apiError("isActive es requerido y debe ser booleano", 400);
+  if (isActive !== undefined && typeof isActive !== "boolean") return apiError("isActive debe ser booleano", 400);
+  if (isVerified !== undefined && typeof isVerified !== "boolean") return apiError("isVerified debe ser booleano", 400);
 
   try {
+    const dataToUpdate: any = {};
+    if (isActive !== undefined) {
+      dataToUpdate.isActive = isActive;
+      dataToUpdate.status = isActive ? "APPROVED" : "SUSPENDED";
+    }
+    if (isVerified !== undefined) {
+      dataToUpdate.isVerified = isVerified;
+    }
+
     const business = await prisma.business.update({
       where: { id },
-      data: { isActive, status: isActive ? "APPROVED" : "SUSPENDED" }, // Update status alongside isActive
+      data: dataToUpdate,
     });
     return apiSuccess(business);
   } catch (error) {

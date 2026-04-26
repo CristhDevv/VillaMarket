@@ -142,6 +142,24 @@ export default async function DashboardPage() {
           </p>
         </div>
       )}
+
+      {!business.whatsapp && (
+        <div className="bg-orange-50 border border-orange-200 rounded-card p-4 text-sm flex items-start gap-3">
+          <WarningCircle size={24} className="text-orange-500 flex-shrink-0" weight="fill" />
+          <div className="flex-1">
+            <p className="font-bold text-orange-800">Falta número de WhatsApp</p>
+            <p className="text-orange-700 mt-0.5">
+              ⚠️ Agrega tu número de WhatsApp para recibir notificaciones de pedidos.
+            </p>
+            <Link 
+              href="/dashboard/negocio"
+              className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-orange-800 hover:text-orange-900 bg-orange-100 px-3 py-1.5 rounded-pill"
+            >
+              Configurar número <ArrowRight size={12} weight="bold" />
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

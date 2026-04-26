@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { ImageUpload } from "@/components/shared/ImageUpload";
+import { ImageGallery } from "@/components/business/ImageGallery";
 
 const CATEGORIES = [
   { id: "", name: "Selecciona una categoría" },
@@ -56,7 +57,7 @@ export default function NegocioPage() {
             description: b.description || "", phone: b.phone || "",
             address: b.address || "", whatsapp: b.whatsapp || "",
             instagram: b.instagram || "", facebook: b.facebook || "",
-            website: b.website || "", coverImage: b.images?.[0]?.url || "",
+            website: b.website || "", coverImage: b.coverImage || "",
           });
           if (b.schedule) {
             setSchedule(prev => {
@@ -143,6 +144,13 @@ export default function NegocioPage() {
             aspectRatio="cover" 
           />
         </div>
+
+        {isEdit && (
+          <div className="bg-white border border-border rounded-card p-5 space-y-4">
+            <h2 className="font-bold text-foreground">Galería (máx. 6 fotos)</h2>
+            <ImageGallery />
+          </div>
+        )}
 
         <div className="bg-white border border-border rounded-card p-5 space-y-4">
           <h2 className="font-bold text-foreground">Información básica</h2>

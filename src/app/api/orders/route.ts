@@ -52,6 +52,17 @@ export async function POST(req: NextRequest) {
     let total = 0;
     const orderItems = items.map((item: { productId: string; quantity: number }) => {
       const product = productMap.get(item.productId)!;
+      
+      // Validate stock if product has a stock limit
+      if (product.stock !== null) {
+        if (product.stock <= 0) {
+          throw { statusCode: 400, message: `El producto "${product.name}" está agotado` };
+        }
+        if (product.stock < item.quantity) {
+          throw { statusCode: 400, message: `Stock insuficiente para "${product.name}". Disponibles: ${product.stock}` };
+        }
+      }
+
       const unitPrice = Number(product.price);
       total += unitPrice * item.quantity;
       return {
@@ -77,17 +88,56 @@ export async function POST(req: NextRequest) {
         data: orderItems.map((item: any) => ({ ...item, orderId: newOrder.id })),
       });
 
+      // Decrement stock for products with limited stock
+      for (const item of items as { productId: string; quantity: number }[]) {
+        const product = productMap.get(item.productId)!;
+        if (product.stock !== null) {
+          const newStock = Math.max(0, product.stock - item.quantity);
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: newStock,
+              available: newStock > 0,
+            },
+          });
+        }
+      }
+
       return tx.order.findUnique({
         where: { id: newOrder.id },
         include: {
           items: { include: { product: { select: { name: true, price: true } } } },
-          business: { select: { name: true } },
+          business: { select: { name: true, whatsapp: true } },
         },
       });
     });
 
-    return apiSuccess(order, 201);
-  } catch (error) {
+    let whatsappUrl = null;
+    if (order?.business.whatsapp) {
+      const cleanPhone = order.business.whatsapp.replace(/\D/g, "");
+      const phone = cleanPhone.length === 10 ? `57${cleanPhone}` : cleanPhone;
+      
+      const shortId = order.id.slice(-6).toUpperCase();
+      let msg = `¡Nuevo pedido en VillaMarket! 🛒\n\n`;
+      msg += `Pedido #${shortId}\n`;
+      msg += `Cliente: ${session.user.name || "Cliente"}\n`;
+      msg += `Productos:\n`;
+      order.items.forEach((i) => {
+        msg += `- ${i.quantity}x ${i.product.name} — $${Number(i.unitPrice) * i.quantity}\n`;
+      });
+      msg += `Total: $${total}\n`;
+      if (note) msg += `Nota: ${note}\n`;
+      msg += `\nVer pedido: https://villamarket.co/dashboard/pedidos`;
+      
+      whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    }
+
+    return apiSuccess({ ...order, whatsappUrl }, 201);
+  } catch (error: any) {
+    // Handle stock validation errors thrown as objects
+    if (error?.statusCode && error?.message) {
+      return apiError(error.message, error.statusCode);
+    }
     console.error("Order creation error:", error);
     return apiError("Error al crear el pedido", 500);
   }

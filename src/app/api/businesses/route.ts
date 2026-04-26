@@ -9,10 +9,13 @@ export async function GET(req: NextRequest) {
     const search     = searchParams.get("search") || "";
     const category   = searchParams.get("category") || "";
     const featured   = searchParams.get("featured") === "true";
+    const verified   = searchParams.get("verified") === "true";
+    const open       = searchParams.get("open") === "true";
+    const priceRange = searchParams.get("priceRange") || undefined;
     const page       = parseInt(searchParams.get("page") || "1");
     const limit      = parseInt(searchParams.get("limit") || "12");
 
-    const result = await getBusinesses({ search, category, featured, page, limit });
+    const result = await getBusinesses({ search, category, featured, verified, open, priceRange, page, limit });
 
     return apiSuccess({
       businesses: result.businesses,

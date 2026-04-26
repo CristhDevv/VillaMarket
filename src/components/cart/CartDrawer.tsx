@@ -11,6 +11,7 @@ export function CartDrawer() {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [whatsappSuccess, setWhatsappSuccess] = useState<{ url: string, orderId: string } | null>(null);
   const { items, count, total, removeItem, updateQuantity, clearCart, businessId, businessSlug } = useCart();
   const { data: session } = useSession();
   const router = useRouter();
@@ -44,9 +45,14 @@ export function CartDrawer() {
       if (!res.ok) { setError(data.error || "Error al hacer el pedido"); return; }
 
       clearCart();
-      setOpen(false);
       setNote("");
-      router.push(`/pedidos/${data.data.id}`);
+      
+      if (data.data.whatsappUrl) {
+        setWhatsappSuccess({ url: data.data.whatsappUrl, orderId: data.data.id });
+      } else {
+        setOpen(false);
+        router.push(`/pedidos/${data.data.id}`);
+      }
     } catch {
       setError("Error de red. Intenta nuevamente.");
     } finally {
@@ -140,6 +146,51 @@ export function CartDrawer() {
               <button onClick={handleCheckout} disabled={loading}
                 className="w-full h-12 bg-accent text-white font-bold rounded-pill disabled:opacity-70 active:scale-95 transition-all">
                 {loading ? "Procesando..." : session ? "Hacer pedido" : "Ingresar para pedir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Success Modal */}
+      {whatsappSuccess && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => {
+            setWhatsappSuccess(null);
+            setOpen(false);
+            router.push(`/pedidos/${whatsappSuccess.orderId}`);
+          }} />
+          <div className="relative bg-white rounded-card p-6 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">✅</span>
+            </div>
+            <h3 className="text-xl font-black text-foreground mb-2">¡Pedido enviado!</h3>
+            <p className="text-sm text-muted mb-6">
+              Tu pedido se guardó correctamente. Notifica al negocio por WhatsApp para que lo preparen más rápido.
+            </p>
+            <div className="space-y-3">
+              <a 
+                href={whatsappSuccess.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => {
+                  setWhatsappSuccess(null);
+                  setOpen(false);
+                  router.push(`/pedidos/${whatsappSuccess.orderId}`);
+                }}
+                className="flex items-center justify-center w-full h-12 bg-[#25D366] text-white font-bold rounded-pill active:scale-95 transition-all shadow-md"
+              >
+                Notificar al negocio por WhatsApp
+              </a>
+              <button 
+                onClick={() => {
+                  setWhatsappSuccess(null);
+                  setOpen(false);
+                  router.push(`/pedidos/${whatsappSuccess.orderId}`);
+                }}
+                className="w-full h-12 bg-surface text-foreground font-semibold rounded-pill active:scale-95 transition-all border border-border"
+              >
+                Omitir
               </button>
             </div>
           </div>

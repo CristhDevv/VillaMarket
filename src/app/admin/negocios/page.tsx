@@ -11,6 +11,7 @@ interface Business {
   name: string;
   slug: string;
   isActive: boolean;
+  isVerified: boolean;
   createdAt: string;
   category: { name: string; emoji: string };
   owner: { name: string; email: string };
@@ -48,6 +49,18 @@ export default function AdminNegociosPage() {
     });
     if (!res.ok) {
       setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isActive: current } : b));
+    }
+  };
+
+  const toggleVerified = async (id: string, current: boolean) => {
+    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isVerified: !current } : b));
+    const res = await fetch(`/api/admin/businesses/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isVerified: !current }),
+    });
+    if (!res.ok) {
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isVerified: current } : b));
     }
   };
 
@@ -128,20 +141,37 @@ export default function AdminNegociosPage() {
                       {format(new Date(business.createdAt), "d MMM yyyy", { locale: es })}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleActive(business.id, business.isActive)}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded-pill text-[10px] font-bold transition-all ${
-                          business.isActive 
-                            ? "bg-green-50 text-green-700 hover:bg-green-100" 
-                            : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                        }`}
-                      >
-                        {business.isActive ? (
-                          <><CheckCircle size={12} weight="fill" /> Activo</>
-                        ) : (
-                          <><XCircle size={12} weight="fill" /> Inactivo</>
-                        )}
-                      </button>
+                      <div className="flex flex-col gap-2 items-start">
+                        <button
+                          onClick={() => toggleActive(business.id, business.isActive)}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-pill text-[10px] font-bold transition-all ${
+                            business.isActive 
+                              ? "bg-green-50 text-green-700 hover:bg-green-100" 
+                              : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                          }`}
+                        >
+                          {business.isActive ? (
+                            <><CheckCircle size={12} weight="fill" /> Activo</>
+                          ) : (
+                            <><XCircle size={12} weight="fill" /> Inactivo</>
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => toggleVerified(business.id, business.isVerified)}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-pill text-[10px] font-bold transition-all ${
+                            business.isVerified 
+                              ? "bg-accent/10 text-accent hover:bg-accent/20" 
+                              : "bg-surface text-muted border border-border hover:bg-border/50"
+                          }`}
+                        >
+                          {business.isVerified ? (
+                            <><CheckCircle size={12} weight="fill" /> ✓ Verificado</>
+                          ) : (
+                            <><CheckCircle size={12} /> Verificar</>
+                          )}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

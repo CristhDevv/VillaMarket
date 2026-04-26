@@ -65,8 +65,34 @@ async function main() {
     },
   });
   console.log(`  ✓ Customer: ${customer.email}`);
-
   console.log("✅ Usuarios de prueba creados");
+
+  // Create a sample business for testing
+  const comidasCategory = await prisma.category.findUnique({ where: { slug: "comidas" } });
+  
+  if (comidasCategory) {
+    await prisma.business.upsert({
+      where: { slug: "restaurante-prueba" },
+      update: {
+        isActive: true,
+        status: "APPROVED"
+      },
+      create: {
+        name: "Restaurante de Prueba",
+        slug: "restaurante-prueba",
+        description: "El mejor restaurante de prueba en Villa Rica.",
+        phone: "3001234567",
+        address: "Calle de Prueba 123",
+        categoryId: comidasCategory.id,
+        ownerId: owner.id,
+        isActive: true,
+        status: "APPROVED",
+        isFeatured: true
+      }
+    });
+    console.log("✅ Negocio de prueba creado");
+  }
+
   console.log("🎉 Seed completado exitosamente");
 }
 

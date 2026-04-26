@@ -20,6 +20,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   try {
     const body = await req.json();
+    
+    // Auto-toggle available based on stock if stock is provided
+    if (body.stock !== undefined) {
+      if (body.stock === 0) body.available = false;
+      else if (body.stock !== null && body.stock > 0) body.available = true;
+    }
+
     const updated = await prisma.product.update({ where: { id }, data: body });
     return apiSuccess(updated);
   } catch {

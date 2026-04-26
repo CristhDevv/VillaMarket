@@ -23,16 +23,26 @@ export function ProductForm({ productId }: { productId?: string }) {
     name: "", price: "", description: "", image: "",
     categoryId: "", available: true,
   });
+  const [stockUnlimited, setStockUnlimited] = useState(true);
+  const [stockValue, setStockValue] = useState("10");
 
   useEffect(() => {
     fetch("/api/dashboard/product-categories").then(r => r.json()).then(res => setCategories(res.data || []));
     if (isEdit) {
       fetch("/api/dashboard/products").then(r => r.json()).then(res => {
         const p = (res.data || []).find((x: any) => x.id === productId);
-        if (p) setForm({
-          name: p.name, price: String(p.price), description: p.description || "",
-          image: p.image || "", categoryId: p.category?.id || "", available: p.available,
-        });
+        if (p) {
+          setForm({
+            name: p.name, price: String(p.price), description: p.description || "",
+            image: p.image || "", categoryId: p.category?.id || "", available: p.available,
+          });
+          if (p.stock === null || p.stock === undefined) {
+            setStockUnlimited(true);
+          } else {
+            setStockUnlimited(false);
+            setStockValue(String(p.stock));
+          }
+        }
         setFetching(false);
       });
     }
@@ -64,9 +74,12 @@ export function ProductForm({ productId }: { productId?: string }) {
       setError("Nombre y precio válido son obligatorios"); setLoading(false); return;
     }
 
+    const stock = stockUnlimited ? null : (parseInt(stockValue) >= 0 ? parseInt(stockValue) : null);
+
     const body = {
       name: form.name, price, description: form.description || null,
-      image: form.image || null, categoryId: form.categoryId || null, available: form.available,
+      image: form.image || null, categoryId: form.categoryId || null,
+      available: form.available, stock,
     };
 
     const url = isEdit ? `/api/dashboard/products/${productId}` : "/api/dashboard/products";
@@ -146,6 +159,46 @@ export function ProductForm({ productId }: { productId?: string }) {
               <option value="">Sin categoría</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+          </div>
+
+          {/* Stock */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Stock disponible</p>
+                <p className="text-xs text-muted">{stockUnlimited ? "Sin límite (siempre disponible)" : `${stockValue} unidades disponibles`}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockUnlimited(v => !v);
+                  if (stockUnlimited) setForm(f => ({ ...f, available: parseInt(stockValue) > 0 }));
+                  else setForm(f => ({ ...f, available: true }));
+                }}
+                className={`relative w-12 h-6 rounded-full transition-colors ${stockUnlimited ? "bg-accent" : "bg-border"}`}
+              >
+                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${stockUnlimited ? "left-7" : "left-1"}`} />
+              </button>
+            </div>
+            {!stockUnlimited && (
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-medium text-muted whitespace-nowrap">Unidades:</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={stockValue}
+                  onChange={(e) => {
+                    setStockValue(e.target.value);
+                    const n = parseInt(e.target.value);
+                    if (!isNaN(n)) {
+                      setForm(f => ({ ...f, available: n > 0 }));
+                    }
+                  }}
+                  className="w-32 h-10 px-3 rounded-card bg-surface border border-border text-sm text-foreground focus:outline-none focus:border-accent"
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between py-1">
