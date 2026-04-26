@@ -134,10 +134,10 @@ export default async function AdminPage() {
             {stats.recentBusinesses.map((b) => (
               <div key={b.id} className="px-5 py-3 flex items-center justify-between hover:bg-surface/30 transition-colors">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">{b.category.emoji}</span>
+                  <span className="text-xl">{b.category?.emoji ?? "🏪"}</span>
                   <div>
                     <p className="text-sm font-bold text-foreground">{b.name}</p>
-                    <p className="text-[10px] text-muted">Dueño: {b.owner.name || "Sin nombre"}</p>
+                    <p className="text-[10px] text-muted">Dueño: {b.owner?.name ?? "Sin nombre"}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -167,10 +167,10 @@ export default async function AdminPage() {
                     <p className="text-sm font-bold text-foreground">${Number(o.total).toLocaleString("es-CO")}</p>
                     <span className="text-[9px] px-1.5 py-0.5 rounded-pill bg-surface border border-border text-muted font-bold tracking-tighter">{o.status}</span>
                   </div>
-                  <p className="text-[10px] text-muted truncate max-w-[150px]">En {o.business.name}</p>
+                  <p className="text-[10px] text-muted truncate max-w-[150px]">En {o.business?.name ?? "Negocio eliminado"}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-foreground font-bold">{o.user.name || "Cliente"}</p>
+                  <p className="text-[10px] text-foreground font-bold">{o.user?.name ?? "Cliente"}</p>
                   <p className="text-[9px] text-muted italic">
                     {new Date(o.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
                   </p>
