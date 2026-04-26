@@ -13,12 +13,7 @@ import { auth } from "@/lib/auth";
 import { ReviewForm } from "@/components/business/ReviewForm";
 import { ReviewList } from "@/components/business/ReviewList";
 import { JsonLd } from "@/components/shared/JsonLd";
-import dynamic from "next/dynamic";
-
-const BusinessMap = dynamic(
-  () => import("@/components/map/BusinessMap"),
-  { ssr: false }
-);
+import BusinessMapWrapper from "@/components/map/BusinessMapWrapper";
 
 interface ProductWithStock {
   id: string;
@@ -224,7 +219,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                 <p className="text-sm font-medium text-foreground">{business.address}</p>
                 {business.latitude && business.longitude && (
                   <div className="mt-4">
-                    <BusinessMap
+                    <BusinessMapWrapper
                       latitude={business.latitude}
                       longitude={business.longitude}
                       businessName={business.name}
