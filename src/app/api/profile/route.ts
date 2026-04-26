@@ -41,8 +41,8 @@ export async function PATCH(req: NextRequest) {
   try {
     const { name, phone, currentPassword, newPassword } = await req.json();
     const updateData: any = {
-      name: name || undefined,
-      phone: phone || undefined,
+      name: name?.trim() || undefined,
+      phone: phone?.trim() || undefined,
     };
 
     // Lógica de cambio de contraseña
