@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
 const prisma = new PrismaClient();
 
 const categories = [
@@ -19,6 +21,9 @@ const categories = [
 async function main() {
   console.log("🌱 Iniciando seed...");
 
+  // Contraseña para todas las cuentas de prueba
+  const hashedPassword = await bcrypt.hash("test1234", 10);
+
   // Categorías
   for (const category of categories) {
     await prisma.category.upsert({
@@ -33,11 +38,15 @@ async function main() {
   // Admin
   const admin = await prisma.user.upsert({
     where: { email: "admin@villamarket.com" },
-    update: { role: "ADMIN" },
+    update: { 
+      role: "ADMIN",
+      password: hashedPassword 
+    },
     create: {
       name: "Administrador",
       email: "admin@villamarket.com",
       role: "ADMIN",
+      password: hashedPassword,
     },
   });
   console.log(`  ✓ Admin: ${admin.email}`);
@@ -45,11 +54,15 @@ async function main() {
   // Owner de prueba
   const owner = await prisma.user.upsert({
     where: { email: "owner@villamarket.com" },
-    update: { role: "OWNER" },
+    update: { 
+      role: "OWNER",
+      password: hashedPassword
+    },
     create: {
       name: "Dueño Prueba",
       email: "owner@villamarket.com",
       role: "OWNER",
+      password: hashedPassword,
     },
   });
   console.log(`  ✓ Owner: ${owner.email}`);
@@ -57,11 +70,15 @@ async function main() {
   // Customer de prueba
   const customer = await prisma.user.upsert({
     where: { email: "customer@villamarket.com" },
-    update: { role: "CUSTOMER" },
+    update: { 
+      role: "CUSTOMER",
+      password: hashedPassword
+    },
     create: {
       name: "Cliente Prueba",
       email: "customer@villamarket.com",
       role: "CUSTOMER",
+      password: hashedPassword,
     },
   });
   console.log(`  ✓ Customer: ${customer.email}`);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { GoogleLogo } from "@phosphor-icons/react";
+// import { GoogleLogo } from "@phosphor-icons/react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -100,6 +100,7 @@ export default function RegisterPage() {
         </button>
       </form>
 
+      {/* 
       <div className="my-6 flex items-center gap-3">
         <div className="flex-1 h-px bg-border"></div>
         <span className="text-xs text-muted font-medium uppercase">O regístrate con</span>
@@ -113,7 +114,8 @@ export default function RegisterPage() {
       >
         <GoogleLogo size={20} weight="bold" />
         Google
-      </button>
+      </button> 
+      */}
 
       <p className="text-center text-sm text-muted mt-8">
         ¿Ya tienes cuenta?{" "}

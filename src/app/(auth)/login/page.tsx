@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GoogleLogo } from "@phosphor-icons/react";
+// import { GoogleLogo } from "@phosphor-icons/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -85,6 +85,35 @@ export default function LoginPage() {
         </button>
       </form>
 
+      {/* Botones de acceso rápido para pruebas */}
+      <div className="mt-8 space-y-2">
+        <p className="text-[10px] text-center text-muted uppercase font-bold tracking-widest mb-3">Acceso rápido (Pruebas)</p>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => { setEmail("admin@villamarket.com"); setPassword("test1234"); }}
+            className="text-[10px] py-2 bg-surface border border-border rounded-pill hover:bg-accent/5 transition-all font-bold text-foreground"
+          >
+            Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => { setEmail("owner@villamarket.com"); setPassword("test1234"); }}
+            className="text-[10px] py-2 bg-surface border border-border rounded-pill hover:bg-accent/5 transition-all font-bold text-foreground"
+          >
+            Owner
+          </button>
+          <button
+            type="button"
+            onClick={() => { setEmail("customer@villamarket.com"); setPassword("test1234"); }}
+            className="text-[10px] py-2 bg-surface border border-border rounded-pill hover:bg-accent/5 transition-all font-bold text-foreground"
+          >
+            Cliente
+          </button>
+        </div>
+      </div>
+
+      {/* 
       <div className="my-6 flex items-center gap-3">
         <div className="flex-1 h-px bg-border"></div>
         <span className="text-xs text-muted font-medium uppercase">O ingresa con</span>
@@ -98,7 +127,8 @@ export default function LoginPage() {
       >
         <GoogleLogo size={20} weight="bold" />
         Google
-      </button>
+      </button> 
+      */}
 
       <p className="text-center text-sm text-muted mt-8">
         ¿No tienes cuenta?{" "}
