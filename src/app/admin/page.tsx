@@ -1,14 +1,40 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Storefront, Users, Package, ClipboardText } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 
 async function getStats() {
-  const [totalBusinesses, activeBusinesses, usersByRole, totalProducts, ordersByStatus] = await Promise.all([
+  const [
+    totalBusinesses, 
+    activeBusinesses, 
+    usersByRole, 
+    totalProducts, 
+    ordersByStatus,
+    recentBusinesses,
+    recentOrders
+  ] = await Promise.all([
     prisma.business.count(),
     prisma.business.count({ where: { isActive: true } }),
     prisma.user.groupBy({ by: ["role"], _count: { role: true } }),
     prisma.product.count(),
     prisma.order.groupBy({ by: ["status"], _count: { status: true } }),
+    // Últimos 5 negocios
+    prisma.business.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: { select: { emoji: true } },
+        owner: { select: { name: true } },
+      },
+    }),
+    // Últimos 5 pedidos
+    prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        business: { select: { name: true } },
+        user: { select: { name: true } },
+      },
+    }),
   ]);
 
   return {
@@ -16,6 +42,8 @@ async function getStats() {
     users: usersByRole.reduce((acc, curr) => ({ ...acc, [curr.role]: curr._count.role }), {} as Record<string, number>),
     products: totalProducts,
     orders: ordersByStatus.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.status }), {} as Record<string, number>),
+    recentBusinesses,
+    recentOrders,
   };
 }
 
@@ -88,6 +116,67 @@ export default async function AdminPage() {
             <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-pill font-bold">
               {stats.orders["DELIVERED"] || 0} E
             </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Negocios Recientes */}
+        <div className="bg-white border border-border rounded-card shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-surface/50 flex justify-between items-center">
+            <h3 className="font-black text-foreground flex items-center gap-2">
+              <Storefront size={18} weight="fill" className="text-accent" />
+              Negocios Recientes
+            </h3>
+            <Link href="/admin/negocios" className="text-xs font-bold text-accent hover:underline">Ver todos</Link>
+          </div>
+          <div className="divide-y divide-border">
+            {stats.recentBusinesses.map((b) => (
+              <div key={b.id} className="px-5 py-3 flex items-center justify-between hover:bg-surface/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{b.category.emoji}</span>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{b.name}</p>
+                    <p className="text-[10px] text-muted">Dueño: {b.owner.name || "Sin nombre"}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted font-medium whitespace-nowrap">
+                    {new Date(b.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pedidos Recientes */}
+        <div className="bg-white border border-border rounded-card shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-surface/50 flex justify-between items-center">
+            <h3 className="font-black text-foreground flex items-center gap-2">
+              <ClipboardText size={18} weight="fill" className="text-purple-600" />
+              Pedidos Recientes
+            </h3>
+            <span className="text-[10px] font-bold text-muted bg-surface px-2 py-0.5 rounded-pill border border-border italic">Vista Admin</span>
+          </div>
+          <div className="divide-y divide-border">
+            {stats.recentOrders.map((o) => (
+              <div key={o.id} className="px-5 py-3 flex items-center justify-between hover:bg-surface/30 transition-colors">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-foreground">${Number(o.total).toLocaleString("es-CO")}</p>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-pill bg-surface border border-border text-muted font-bold tracking-tighter">{o.status}</span>
+                  </div>
+                  <p className="text-[10px] text-muted truncate max-w-[150px]">En {o.business.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-foreground font-bold">{o.user.name || "Cliente"}</p>
+                  <p className="text-[9px] text-muted italic">
+                    {new Date(o.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
