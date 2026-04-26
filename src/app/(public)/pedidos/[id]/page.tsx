@@ -2,9 +2,21 @@ import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
+import { CheckCircle, Clock, Truck, XCircle } from "@phosphor-icons/react/dist/ssr";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+// Forzar revalidación cada 30 segundos para actualizar el estado del pedido
+export const revalidate = 30;
+
+type OrderStatus = "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+
+const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; icon: any }> = {
+  PENDING:   { label: "Pendiente",  color: "text-yellow-700 bg-yellow-50",  icon: Clock },
+  CONFIRMED: { label: "Confirmado", color: "text-blue-700 bg-blue-50",      icon: CheckCircle },
+  DELIVERED: { label: "Entregado",  color: "text-green-700 bg-green-50",    icon: Truck },
+  CANCELLED: { label: "Cancelado",  color: "text-red-600 bg-red-50",        icon: XCircle },
+};
 
 export default async function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -21,6 +33,10 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
 
   if (!order || order.userId !== session.user.id) notFound();
 
+  const status = order.status as OrderStatus;
+  const cfg = STATUS_CONFIG[status];
+  const StatusIcon = cfg.icon;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 max-w-lg mx-auto text-center">
       {/* Ícono de éxito */}
@@ -33,8 +49,16 @@ export default async function OrderConfirmationPage({ params }: { params: Promis
         El negocio se comunicará contigo pronto para confirmar tu pedido.
       </p>
 
+      {/* Badge de Estado */}
+      <div className="mt-6 flex justify-center">
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-pill text-sm font-bold ${cfg.color}`}>
+          <StatusIcon size={18} weight="fill" />
+          {cfg.label}
+        </div>
+      </div>
+
       {/* Número de pedido */}
-      <div className="mt-6 bg-surface border border-border rounded-card px-5 py-3 w-full">
+      <div className="mt-4 bg-surface border border-border rounded-card px-5 py-3 w-full">
         <p className="text-xs text-muted font-medium">Número de pedido</p>
         <p className="text-lg font-black text-foreground font-mono tracking-wider">
           #{order.id.slice(0, 8).toUpperCase()}
