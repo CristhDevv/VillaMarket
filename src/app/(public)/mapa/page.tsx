@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import AllBusinessesMapWrapper from "@/components/map/AllBusinessesMapWrapper";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Mapa de negocios — VillaMarket",
   description:
