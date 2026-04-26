@@ -6,8 +6,9 @@ import bcrypt from "bcryptjs";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
 
   // Verificación estricta de rol ADMIN
@@ -27,7 +28,7 @@ export async function PATCH(
 
     // Actualizar en la base de datos
     await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { password: hashedPassword },
     });
 
