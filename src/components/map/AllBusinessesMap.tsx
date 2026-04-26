@@ -40,14 +40,16 @@ const VILLA_RICA_CENTER: [number, number] = [3.178, -76.633];
 const DEFAULT_ZOOM = 14;
 
 export default function AllBusinessesMap({ businesses }: AllBusinessesMapProps) {
-  const center: [number, number] =
-    businesses.length > 0
-      ? [businesses[0].latitude, businesses[0].longitude]
-      : VILLA_RICA_CENTER;
+  const mapCenter: [number, number] = businesses.length > 0
+    ? [
+        businesses.reduce((sum, b) => sum + Number(b.latitude), 0) / businesses.length,
+        businesses.reduce((sum, b) => sum + Number(b.longitude), 0) / businesses.length,
+      ]
+    : VILLA_RICA_CENTER;
 
   return (
     <MapContainer
-      center={center}
+      center={mapCenter}
       zoom={DEFAULT_ZOOM}
       scrollWheelZoom
       style={{ height: "100%", width: "100%" }}
