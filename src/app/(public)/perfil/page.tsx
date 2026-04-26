@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { User, EnvelopeSimple, Phone, ShieldCheck, CalendarBlank } from "@phosphor-icons/react";
+import { User, EnvelopeSimple, Phone, ShieldCheck, CalendarBlank, Key } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -31,6 +31,16 @@ export default function ProfilePage() {
     name: "",
     phone: "",
   });
+
+  // Estados para cambio de contraseña
+  const [passForm, setPassForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passError, setPassError] = useState("");
+  const [passSuccess, setPassSuccess] = useState("");
+  const [passSaving, setPassSaving] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -75,6 +85,49 @@ export default function ProfilePage() {
       setError("Error de conexión");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPassError("");
+    setPassSuccess("");
+    
+    if (passForm.newPassword !== passForm.confirmPassword) {
+      setPassError("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    if (passForm.newPassword.length < 6) {
+      setPassError("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setPassSaving(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passForm.currentPassword,
+          newPassword: passForm.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPassError(data.error || "Error al actualizar contraseña");
+      } else {
+        setPassSuccess("Contraseña actualizada correctamente");
+        setPassForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }
+    } catch {
+      setPassError("Error de conexión");
+    } finally {
+      setPassSaving(false);
     }
   };
 
@@ -185,6 +238,61 @@ export default function ProfilePage() {
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
         </form>
+      </div>
+
+      {/* Seguridad */}
+      <div className="bg-white border border-border rounded-card p-5 shadow-sm space-y-5">
+        <h2 className="text-lg font-bold text-foreground border-b border-border pb-3 flex items-center gap-2">
+          <Key size={20} className="text-accent" />
+          Seguridad
+        </h2>
+        
+        {passError && <div className="p-3 bg-red-50 text-red-600 rounded-md text-xs font-medium">{passError}</div>}
+        {passSuccess && <div className="p-3 bg-green-50 text-green-700 rounded-md text-xs font-medium">{passSuccess}</div>}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-foreground mb-1">Contraseña actual</label>
+            <input 
+              type="password" 
+              value={passForm.currentPassword}
+              onChange={(e) => setPassForm(f => ({ ...f, currentPassword: e.target.value }))}
+              placeholder="••••••••"
+              className="w-full px-4 py-2.5 rounded-md bg-white border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-foreground mb-1">Nueva contraseña</label>
+            <input 
+              type="password" 
+              value={passForm.newPassword}
+              onChange={(e) => setPassForm(f => ({ ...f, newPassword: e.target.value }))}
+              placeholder="Mínimo 6 caracteres"
+              className="w-full px-4 py-2.5 rounded-md bg-white border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-foreground mb-1">Confirmar nueva contraseña</label>
+            <input 
+              type="password" 
+              value={passForm.confirmPassword}
+              onChange={(e) => setPassForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              placeholder="Repite la nueva contraseña"
+              className="w-full px-4 py-2.5 rounded-md bg-white border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+            />
+          </div>
+
+          <button 
+            type="button" 
+            disabled={passSaving || !passForm.currentPassword || !passForm.newPassword}
+            onClick={handlePasswordChange}
+            className="w-full h-11 bg-surface border border-border text-foreground font-bold rounded-pill text-sm disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center"
+          >
+            {passSaving ? "Actualizando..." : "Actualizar contraseña"}
+          </button>
+        </div>
       </div>
     </div>
   );
