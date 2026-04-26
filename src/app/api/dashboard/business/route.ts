@@ -70,10 +70,27 @@ export async function PATCH(req: Request) {
     if (!business) return apiError("No tienes un negocio registrado", 404);
 
     const body = await req.json();
-    const validFields = { ...body, coverImage: body.coverImage ?? null };
+    
+    // Whitelist explícito de campos permitidos (evita inyección de status, isVerified, etc.)
+    const dataToUpdate: Record<string, any> = {};
+    const allowedFields = [
+      "name", "categoryId", "description", "phone", "address",
+      "whatsapp", "instagram", "facebook", "website", "schedule"
+    ];
+
+    allowedFields.forEach((field) => {
+      if (body[field] !== undefined) {
+        dataToUpdate[field] = body[field];
+      }
+    });
+
+    if (body.coverImage !== undefined) {
+      dataToUpdate.coverImage = body.coverImage ?? null;
+    }
+
     const updated = await prisma.business.update({
       where: { id: business.id },
-      data: validFields,
+      data: dataToUpdate,
     });
 
     return apiSuccess(updated);
