@@ -69,9 +69,10 @@ export async function PATCH(req: Request) {
     if (!business) return apiError("No tienes un negocio registrado", 404);
 
     const body = await req.json();
+    const { coverImage: _coverImage, ...validFields } = body; // coverImage is handled via BusinessImage, not Business
     const updated = await prisma.business.update({
       where: { id: business.id },
-      data: body,
+      data: validFields,
     });
 
     return apiSuccess(updated);

@@ -4,11 +4,12 @@ interface Business {
   id: string;
   name: string;
   slug: string;
-  category: string;
-  description: string;
-  location?: string;
-  rating?: number;
-  imageUrl?: string;
+  category: { name: string; emoji: string };
+  coverImage?: string;
+  avgRating?: number | null;
+  reviewCount?: number;
+  whatsapp?: string | null;
+  address?: string | null;
 }
 
 interface BusinessGridProps {

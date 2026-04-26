@@ -121,7 +121,7 @@ export default async function HomePage() {
                   name={biz.name}
                   slug={biz.slug}
                   category={biz.category}
-                  coverImage={biz.coverImage || biz.images[0]?.url}
+                  coverImage={biz.images[0]?.url}
                   avgRating={avg}
                   reviewCount={ratings.length}
                   address={biz.address}

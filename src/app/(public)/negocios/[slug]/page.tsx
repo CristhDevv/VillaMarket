@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   
   const title = `${business.name} — VillaMarket`;
   const description = business.description || `Encuentra ${business.name} en Villa Rica, Cauca`;
-  const image = business.coverImage || (business.images.length > 0 ? business.images[0].url : undefined);
+  const image = business.images.find(img => img.isCover)?.url ?? business.images[0]?.url;
 
   return {
     title,
@@ -74,13 +74,14 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
     <div className="pb-8">
       {/* 1. Galería / Banner */}
       <div className="w-full h-64 bg-surface relative overflow-hidden flex items-center justify-center">
-        {business.coverImage ? (
-          <Image src={business.coverImage} alt={business.name} fill className="object-cover" priority />
-        ) : business.images.length > 0 ? (
-          <Image src={business.images[0].url} alt={business.name} fill className="object-cover" priority />
-        ) : (
-          <span className="text-6xl">{business.category.emoji}</span>
-        )}
+        {(() => {
+          const cover = business.images.find(img => img.isCover) ?? business.images[0];
+          return cover ? (
+            <Image src={cover.url} alt={business.name} fill className="object-cover" priority />
+          ) : (
+            <span className="text-6xl">{business.category.emoji}</span>
+          );
+        })()}
       </div>
 
       <div className="px-4 pt-5 space-y-6">

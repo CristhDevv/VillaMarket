@@ -56,7 +56,7 @@ export default function NegocioPage() {
             description: b.description || "", phone: b.phone || "",
             address: b.address || "", whatsapp: b.whatsapp || "",
             instagram: b.instagram || "", facebook: b.facebook || "",
-            website: b.website || "", coverImage: b.coverImage || "",
+            website: b.website || "", coverImage: b.images?.[0]?.url || "",
           });
           if (b.schedule) {
             setSchedule(prev => {

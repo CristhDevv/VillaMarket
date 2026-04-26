@@ -69,7 +69,7 @@ export default async function NegociosPage({
                     name={biz.name}
                     slug={biz.slug}
                     category={biz.category}
-                    coverImage={biz.coverImage || biz.images[0]?.url}
+                    coverImage={biz.images.find(img => img.isCover)?.url ?? biz.images[0]?.url}
                     avgRating={avg}
                     reviewCount={ratings.length}
                     address={biz.address}
