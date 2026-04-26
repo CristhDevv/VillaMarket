@@ -13,6 +13,12 @@ import { auth } from "@/lib/auth";
 import { ReviewForm } from "@/components/business/ReviewForm";
 import { ReviewList } from "@/components/business/ReviewList";
 import { JsonLd } from "@/components/shared/JsonLd";
+import dynamic from "next/dynamic";
+
+const BusinessMap = dynamic(
+  () => import("@/components/map/BusinessMap"),
+  { ssr: false }
+);
 
 interface ProductWithStock {
   id: string;
@@ -217,11 +223,14 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
               <div>
                 <p className="text-sm font-medium text-foreground">{business.address}</p>
                 {business.latitude && business.longitude && (
-                  <a href={`https://maps.google.com/?q=${business.latitude},${business.longitude}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-xs font-medium text-accent hover:underline mt-1 inline-block">
-                    Ver en Google Maps
-                  </a>
+                  <div className="mt-4">
+                    <BusinessMap
+                      latitude={business.latitude}
+                      longitude={business.longitude}
+                      businessName={business.name}
+                      address={business.address}
+                    />
+                  </div>
                 )}
               </div>
             </div>
