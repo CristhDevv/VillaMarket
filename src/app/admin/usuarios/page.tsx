@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MagnifyingGlass, Trash, Users } from "@phosphor-icons/react";
+import { MagnifyingGlass, Trash, Users, Key } from "@phosphor-icons/react";
 import { useSession } from "next-auth/react";
 
 interface User {
@@ -22,6 +22,11 @@ export default function AdminUsuariosPage() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<string>("ALL");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Estados para reset de contraseña
+  const [resetTarget, setResetTarget] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +60,29 @@ export default function AdminUsuariosPage() {
     if (res.ok) {
       setUsers(prev => prev.filter(u => u.id !== deleteConfirm));
       setDeleteConfirm(null);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!resetTarget || newPassword.length < 6) return;
+    setResetLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users/${resetTarget}/reset-password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.ok) {
+        alert("Contraseña actualizada correctamente");
+        setResetTarget(null);
+        setNewPassword("");
+      } else {
+        alert("Error al resetear contraseña");
+      }
+    } catch {
+      alert("Error de conexión");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -148,18 +176,27 @@ export default function AdminUsuariosPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => setDeleteConfirm(user.id)}
-                          disabled={!canDelete}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ml-auto ${
-                            canDelete 
-                              ? "bg-red-50 text-red-500 hover:bg-red-100" 
-                              : "bg-surface text-border cursor-not-allowed"
-                          }`}
-                          title={!canDelete ? "No se puede eliminar: tiene pedidos activos o eres tú" : "Eliminar"}
-                        >
-                          <Trash size={14} />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setResetTarget(user.id)}
+                            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-blue-50 text-blue-500 hover:bg-blue-100"
+                            title="Resetear contraseña"
+                          >
+                            <Key size={14} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(user.id)}
+                            disabled={!canDelete}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                              canDelete 
+                                ? "bg-red-50 text-red-500 hover:bg-red-100" 
+                                : "bg-surface text-border cursor-not-allowed"
+                            }`}
+                            title={!canDelete ? "No se puede eliminar: tiene pedidos activos o eres tú" : "Eliminar"}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -170,6 +207,7 @@ export default function AdminUsuariosPage() {
         )}
       </div>
 
+      {/* Modal de Delete */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-card w-full max-w-sm p-6 space-y-4 shadow-xl text-center">
@@ -192,6 +230,38 @@ export default function AdminUsuariosPage() {
                 className="flex-1 h-11 bg-red-600 text-white font-bold rounded-pill text-sm"
               >
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reset Password */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-card w-full max-w-sm p-6 space-y-4 shadow-2xl">
+            <h3 className="text-lg font-black text-foreground">Resetear contraseña</h3>
+            <p className="text-sm text-muted">Ingresa la nueva contraseña para este usuario.</p>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              className="w-full h-11 px-4 rounded-pill border border-border text-sm outline-none focus:border-accent"
+            />
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => { setResetTarget(null); setNewPassword(""); }}
+                className="flex-1 h-11 bg-surface border border-border text-foreground font-medium rounded-pill text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={resetPassword}
+                disabled={newPassword.length < 6 || resetLoading}
+                className="flex-1 h-11 bg-accent text-white font-bold rounded-pill text-sm disabled:opacity-50"
+              >
+                {resetLoading ? "Guardando..." : "Confirmar"}
               </button>
             </div>
           </div>
